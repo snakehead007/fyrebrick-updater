@@ -1,5 +1,4 @@
 require('dotenv').config();
-const scheduler = require('node-scheduler');
 const mongoose = require('mongoose');
 const {start}  = require('./schedulers/schedulers');
 try {

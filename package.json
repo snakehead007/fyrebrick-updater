@@ -1,0 +1,27 @@
+{
+  "name": "fyrebrick-updater",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/snakehead007/fyrebrick-updater.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/snakehead007/fyrebrick-updater/issues"
+  },
+  "homepage": "https://github.com/snakehead007/fyrebrick-updater#readme",
+  "dependencies": {
+    "client": "^0.0.1",
+    "dotenv": "^8.2.0",
+    "mongoose": "^5.11.5",
+    "node-schedule": "^1.3.2",
+    "oauth": "^0.9.15",
+    "winston": "^0.7.3"
+  }
+}

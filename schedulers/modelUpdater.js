@@ -3,8 +3,6 @@ const User = require('../models/user');
 const bricklink = require('../helpers/bricklink');
 const {logger} = require('../helpers/logger');
 const {client} = require('../helpers/session');
-const cookieParser = require('cookie-parser');
-
 exports.default = async ()=>{
     schedule.scheduleJob("0 0 * * *",async ()=>{
         const user = await User.find({setUpComplete:true});
@@ -12,9 +10,6 @@ exports.default = async ()=>{
             bricklink.ordersAll(user);  
         })
     })
-
-
-
     //TODO this does not work for multiple users (check if it does)/
     logger.info(`Setting up all schedulers for users`);
     //checks every minute for all users if any need updates
