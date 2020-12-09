@@ -12,12 +12,7 @@ try {
     });
     mongoose.connection.on('open', async() => {
         logger.info(`mongodb connection opened at ${process.env.DB_URI}`);
-        if((await Inventory.find()).length===0 && (await Order.find()).length===0){
-            logger.error(`Error on getting data from database, both orders and inventory are empty`)
-            process.exit(-1);
-        }else{
-            start();
-        }
+        start();
         
     })
     mongoose.connection.on('error', (error) =>{

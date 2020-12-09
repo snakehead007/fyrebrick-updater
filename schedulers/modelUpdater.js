@@ -5,10 +5,16 @@ const {logger} = require('../helpers/logger');
 const {client} = require('../helpers/session');
 exports.default = async ()=>{
     schedule.scheduleJob("0 0 * * *",async ()=>{
+        logger.info(`started daily update for all users`);
         const user = await User.find({setUpComplete:true});
         user.forEach((user)=>{
+            logger.info(`updating for user ${user.email}`);
+            try{
             bricklink.ordersAll(user);
             bricklink.inventoryAll(user);
+            }catch(err){
+                logger.error(`Gave error for user ${err}`);
+            }
         })
     })
     //TODO this does not work for multiple users (check if it does)/
@@ -26,7 +32,7 @@ exports.default = async ()=>{
                 logger.info(`Looking for user with ${key}`);
                 client.get(key,async (err,data) =>{
                     data = JSON.parse(data);
-                    if(data.email && data._id){
+                    if(data && data.email && data._id){
                         const CURRENT_TIME_IN_MINUTES = Math.round((Date.now()/1000)/60);
                         logger.info(`found user with data: ${data._id} - ${data.email}`);
                         const user = await User.findOne({_id:data._id},async (err,user)=>{
@@ -35,7 +41,8 @@ exports.default = async ()=>{
                             }
                             if(!user){
                                 if(data.email){
-                                    logger.error(`No user found for _id ${data._id}, might be lost, but session has ${data.email} stored`);
+                                    logger.error(`No user found for _id ${data._id}, might be lost`);
+                                    logger.error(`Check if db_uri is correct: ${process.env.DB_URI}`);
                                 }else{
                                     logger.error(`No user found for _id ${data._id}, might be lost`);
                                 }
@@ -45,7 +52,11 @@ exports.default = async ()=>{
                             if(alreadyDoneUsers.indexOf(data.email)===-1){
                                 alreadyDoneUsers.push(data.email);
                                     logger.info(`${data.email} logged in, updating its models`);
-                                    updateModels(user);
+                                    try{
+                                        updateModels(user);
+                                    }catch(err){
+                                        logger.error(`Caught error for user ${user.email} : ${err}`);
+                                    }
                                 }
                             else{
                                 logger.info(`already done user ${data.email}`);                                

@@ -8,7 +8,8 @@ const { update } = require('../models/inventory');
 module.exports.inventorySingle = async (user,inventory_id) => {
     const item = await Inventory.findOne({CONSUMER_KEY:user.CONSUMER_KEY},(err, data)=>{
         if(err){
-            logger.error(`Could not find inventory for user ${user.email}`);
+            logger.error(`Could not find inventory for user ${user.email} : ${err}`);
+            throw err;
         }else{
             const item = data.map((item)=>{
                 return item.inventory_id;
@@ -30,10 +31,9 @@ module.exports.inventorySingle = async (user,inventory_id) => {
                         ...data
                     }
                     await Inventory({CONSUMER_KEY:user.CONSUMER_KEY,inventory_id:inventory_id},updatedInventoryItem);
-                    return true;
                 }else{
-                    logger.error(`Could not update single inventory ${inventory_id} for user ${user.email}`);
-                    return false;
+                    logger.error(`Could not update single inventory ${inventory_id} for user ${user.email}: ${err}`);
+                    throw err;
                 }
             });
         }
@@ -60,7 +60,8 @@ module.exports.inventoryAll = (user) => {
             try{
                 data = JSON.parse(data);
                 }catch(e){
-                    logger.error(`could not parse data for inventory for user ${user.email}`);
+                    logger.error(`could not parse data for inventory for user ${user.email}: ${e}`);
+                    throw new Error(e);
                 }
             //check if inventory data is correct
             if(data && data.meta && data.meta.code==200){
@@ -76,18 +77,16 @@ module.exports.inventoryAll = (user) => {
                         );
                         newItem.save((err,data)=>{
                             if(err){
-                                logger.error(`Could not save new inventory item ${item.inventory_id} of user ${user.email}`);
-                                return false;
+                                logger.error(`Could not save new inventory item ${item.inventory_id} of user ${user.email}: ${err}`);
+                                throw err;
                             }
                         });
                         }
                     )
                 logger.info(`Successfully saved/updated inventory items for users ${user.email}`);
-                return true;
             }else{
-                logger.warn(`Could not receive any data to update inventory for user ${user.email}`);
+                logger.warn(`Could not receive any data to update inventory for user ${user.email}: ${data.meta.description}`);
                 logger.debug(`${data.meta.description}`)
-                return false;
             }
         }
     );
@@ -108,7 +107,8 @@ module.exports.ordersAll = (user,query="")=>{
             try{
             data = JSON.parse(data);
             }catch(e){
-                logger.error(`could not parse data for orders for user ${user.email}`);
+                logger.error(`could not parse data for orders for user ${user.email}: ${e}`);
+                throw new Error(e);
             }
             if(data && data.meta && data.meta.code==200){
                 logger.info(`Found ${data.data.length} orders for user ${user.email}`);
@@ -117,10 +117,14 @@ module.exports.ordersAll = (user,query="")=>{
                         const order_db = await Order.findOne({consumer_key:user.CONSUMER_KEY,order_id:order.order_id});                                                        
                         oauth.get("https://api.bricklink.com/api/store/v1/orders/"+order.order_id+"/items",oauth._requestUrl, oauth._accessUrl, 
                         async (err, data_items) => {
+                            if(err){
+                                logger.error(`receiving order items for user ${user.email} gave error : ${err}`);
+                                throw err;
+                            }
                             try{
                             data_items = JSON.parse(data_items);
                             }catch(e){
-                                logger.warn(`Parsing order items failed, err: ${e.message}`);
+                                logger.warn(`Parsing order items failed, err: ${e}`);
                             }
                             if(data_items && data_items.meta && data_items.meta.code==200){
                                 if(!order_db){
@@ -139,8 +143,8 @@ module.exports.ordersAll = (user,query="")=>{
                                     });
                                     newOrder.save((err,data)=>{
                                         if(err){
-                                            logger.error(`Could not save new order ${order.order_id} of user ${user.email}`);
-                                            return false;
+                                            logger.error(`Could not save new order ${order.order_id} of user ${user.email} ${err}`);
+                                            throw err;
                                         }
                                     });
                                 }else{
@@ -166,26 +170,22 @@ module.exports.ordersAll = (user,query="")=>{
                                     if(!isObjectsSame(order_db,order_dbObj)){
                                         Order.updateOne({consumer_key:user.CONSUMER_KEY,order_id:order.order_id},order_dbObj,(err)=>{
                                             if(err){
-                                                logger.error(`Could not update order ${order.order_id} of user ${user.email}`);
-                                                return false;
+                                                logger.error(`Could not update order ${order.order_id} of user ${user.email} : ${err}`);
+                                                throw err;
                                             }
                                         });
                                     }
                                 }
                             }else{
                                 logger.warn(`Could not receive any data to update orders items for user ${user.email}`);
-                                return false;
                             }
                             
                         });
                     }
                 );
                 logger.info(`successfully found all orders for user ${user.email}`);
-                return true;
             }else{
-                logger.warn(`Could not receive any data to update orders for user ${user.email}`);
-                logger.debug(`${data.meta.description}`)
-                return false;
+                logger.warn(`Could not receive any data to update orders for user ${user.email} : ${data.meta.description}`);
             }
         }
     );
