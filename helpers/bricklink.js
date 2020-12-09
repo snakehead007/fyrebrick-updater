@@ -86,6 +86,7 @@ module.exports.inventoryAll = (user) => {
                 return true;
             }else{
                 logger.warn(`Could not receive any data to update inventory for user ${user.email}`);
+                logger.debug(`${data.meta.description}`)
                 return false;
             }
         }
@@ -183,9 +184,10 @@ module.exports.ordersAll = (user,query="")=>{
                 return true;
             }else{
                 logger.warn(`Could not receive any data to update orders for user ${user.email}`);
+                logger.debug(`${data.meta.description}`)
                 return false;
             }
-        }                        
+        }
     );
     
 }

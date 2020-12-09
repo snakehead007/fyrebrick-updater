@@ -1,7 +1,8 @@
 const { createLogger, format, transports,addColors } = require('winston');
+const { combine, timestamp, printf } = format;
 
-const myFormat = format.printf(({ level, message, timestamp }) => {
-  return `${format.timestamp} ${level}: ${message}`;
+const myFormat = printf(({ level, message, timestamp }) => {
+  return `${timestamp} ${level}: ${message}`;
 });
 const custom = {
     levels: {
@@ -23,8 +24,8 @@ const custom = {
   };
 const logger = createLogger({
     levels:custom.levels,
-    format: format.combine(
-      format.timestamp(),
+    format: combine(
+      timestamp(),
       format.colorize(),
       format.json(),
       myFormat
