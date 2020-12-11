@@ -17,7 +17,6 @@ exports.default = async ()=>{
             }
         })
     })
-    //TODO this does not work for multiple users (check if it does)/
     logger.info(`Setting up all schedulers for users`);
     //checks every minute for all users if any need updates
     schedule.scheduleJob("*/1 * * * *",()=>{
