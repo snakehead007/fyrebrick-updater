@@ -9,6 +9,6 @@ module.exports =
         }catch(err){
             logger.error(`Caught error successfully ${err}`);
         }
-        logger.info('updaters succefully initiliated');
+        logger.info('updaters successfully initiliated');
     }
 }
