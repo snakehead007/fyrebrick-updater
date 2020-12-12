@@ -3,15 +3,16 @@ const User = require('../models/user');
 const bricklink = require('../helpers/bricklink');
 const {logger} = require('../helpers/logger');
 const {client} = require('../helpers/session');
+const TIMEOUT_RESTART = 20*100;
+
 exports.default = async ()=>{
     schedule.scheduleJob("0 0 * * *",async ()=>{
         logger.info(`started daily update for all users`);
         const user = await User.find({setUpComplete:true});
-        user.forEach((user)=>{
+        user.forEach(async(user)=>{
             logger.info(`updating for user ${user.email}`);
             try{
-            bricklink.ordersAll(user);
-            bricklink.inventoryAll(user);
+            await updateModels(user);
             }catch(err){
                 logger.error(`Gave error for user ${err}`);
             }
@@ -52,7 +53,7 @@ exports.default = async ()=>{
                                 alreadyDoneUsers.push(data.email);
                                     logger.info(`${data.email} logged in, updating its models`);
                                     try{
-                                        updateModels(user);
+                                        await updateModels(user);
                                     }catch(err){
                                         logger.error(`Caught error for user ${user.email} : ${err}`);
                                     }
@@ -76,7 +77,15 @@ exports.default = async ()=>{
 };
 
 const updateModels = async (user) => {
-    bricklink.inventoryAll(user);
+    const s1 = await bricklink.inventoryAll(user);
+    if(s1===false){
+        logger.warn(`requesting inventoryAll for user ${user.email} was not successful, retrying in 20sec...`);
+        timeout(await bricklink.inventoryAll,TIMEOUT_RESTART,user);
+    }
     //bricklink.ordersAll(user,"?direction=in&status=pending,updated,processing,ready,paid,packed");
-    bricklink.ordersAll(user);
+    const s2 = await bricklink.ordersAll(user);
+    if(s2===false){
+        logger.warn(`requesting ordersAll for user ${user.email} was not successful, retrying in 20sec...`);
+        timeout(await bricklink.inventoryAll,TIMEOUT_RESTART,user);
+    }
 }

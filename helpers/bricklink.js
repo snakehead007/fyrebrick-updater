@@ -4,12 +4,11 @@ const Order = require("../models/order");
 const {isObjectsSame,mappingOrderItemsForChecked} = require('./functions');
 const {logger} = require('./logger');
 const { update } = require('../models/inventory');
-const TIMEOUT_RESTART = 20*100;
 module.exports.inventorySingle = async (user,inventory_id) => {
     const item = await Inventory.findOne({CONSUMER_KEY:user.CONSUMER_KEY},async(err, data)=>{
         if(err){
             logger.error(`Could not find inventory for user ${user.email} : ${err}`);
-            return;
+            return false;
         }else{
             const item = data.map((item)=>{
                 return item.inventory_id;
@@ -29,7 +28,7 @@ module.exports.inventorySingle = async (user,inventory_id) => {
                     logger.error(`receiving order items for user ${user.email} gave error : ${err}`);
                     if(err.code='ETIMEDOUT'){
                         logger.warn(`Timeout received by bricklink API from user ${user.email}, retrying after 20sec... `);
-                        return setTimeout(this.inventorySingle, TIMEOUT_RESTART,user, inventory_id);
+                        return false;
                     }
                 }
                 if(data && data.meta && data.meta==200){
@@ -40,7 +39,7 @@ module.exports.inventorySingle = async (user,inventory_id) => {
                     await Inventory({CONSUMER_KEY:user.CONSUMER_KEY,inventory_id:inventory_id},updatedInventoryItem);
                 }else{
                     logger.error(`Could not update single inventory ${inventory_id} for user ${user.email}: ${err}`);
-                    return;
+                    return false;
                 }
             });
         }
@@ -68,14 +67,14 @@ module.exports.inventoryAll = async (user) => {
                 logger.error(`receiving order items for user ${user.email} gave error : ${err}`);
                 if(err.code='ETIMEDOUT'){
                     logger.warn(`Timeout received by bricklink API from user ${user.email}, retrying after 20sec... `);
-                    return setTimeout(this.inventoryAll, TIMEOUT_RESTART,user);
+                    return false;
                 }
             }
             try{
                 data = JSON.parse(data);
                 }catch(e){
                     logger.error(`could not parse data for inventory for user ${user.email}: ${e}`);
-                    return;
+                    return false;
                 }
             //check if inventory data is correct
             if(data && data.meta && data.meta.code==200){
@@ -92,7 +91,7 @@ module.exports.inventoryAll = async (user) => {
                         await newItem.save((err,data)=>{
                             if(err){
                                 logger.error(`Could not save new inventory item ${item.inventory_id} of user ${user.email}: ${err}`);
-                                return;
+                                return false;
                             }
                         });
                         }
@@ -122,14 +121,14 @@ module.exports.ordersAll = async (user,query="")=>{
                 logger.error(`receiving order items for user ${user.email} gave error : ${err}`);
                 if(err.code='ETIMEDOUT'){
                     logger.warn(`Timeout received by bricklink API from user ${user.email}, retrying after 20sec... `);
-                    return setTimeout(this.ordersAll, TIMEOUT_RESTART,user, query);
+                    return false
                 }
             }
             try{
             data = JSON.parse(data);
             }catch(e){
                 logger.error(`could not parse data for orders for user ${user.email}: ${e}`);
-                return;;
+                return false;
             }
             if(data && data.meta && data.meta.code==200){
                 logger.info(`Found ${data.data.length} orders for user ${user.email}`);
@@ -142,7 +141,7 @@ module.exports.ordersAll = async (user,query="")=>{
                                 logger.error(`receiving order items for user ${user.email} gave error : ${err}`);
                                 if(err.code='ETIMEDOUT'){
                                     logger.warn(`Timeout received by bricklink API from user ${user.email}, retrying after 20sec... `);
-                                    return setTimeout(this.ordersAll, TIMEOUT_RESTART,user, query);
+                                    return false;
                                 }
                             }
                             try{
@@ -168,7 +167,7 @@ module.exports.ordersAll = async (user,query="")=>{
                                     await newOrder.save((err,data)=>{
                                         if(err){
                                             logger.error(`Could not save new order ${order.order_id} of user ${user.email} ${err}`);
-                                            return;
+                                            return false;
                                         }
                                     });
                                 }else{
