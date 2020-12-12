@@ -4,12 +4,12 @@ const Order = require("../models/order");
 const {isObjectsSame,mappingOrderItemsForChecked} = require('./functions');
 const {logger} = require('./logger');
 const { update } = require('../models/inventory');
-
+const TIMEOUT_RESTART = 20*100;
 module.exports.inventorySingle = async (user,inventory_id) => {
-    const item = await Inventory.findOne({CONSUMER_KEY:user.CONSUMER_KEY},(err, data)=>{
+    const item = await Inventory.findOne({CONSUMER_KEY:user.CONSUMER_KEY},async(err, data)=>{
         if(err){
             logger.error(`Could not find inventory for user ${user.email} : ${err}`);
-            throw err;
+            return;
         }else{
             const item = data.map((item)=>{
                 return item.inventory_id;
@@ -23,8 +23,15 @@ module.exports.inventorySingle = async (user,inventory_id) => {
                 null,
                 "HMAC-SHA1"
             );
-            oauth.get("https://api.bricklink.com/api/store/v1/inventories/"+inventory_id,oauth._requestUrl, oauth._accessUrl, 
+            await oauth.get("https://api.bricklink.com/api/store/v1/inventories/"+inventory_id,oauth._requestUrl, oauth._accessUrl, 
             async (err, data) => {
+                if(err){
+                    logger.error(`receiving order items for user ${user.email} gave error : ${err}`);
+                    if(err.code='ETIMEDOUT'){
+                        logger.warn(`Timeout received by bricklink API from user ${user.email}, retrying after 20sec... `);
+                        return setTimeout(this.inventorySingle, TIMEOUT_RESTART,user, inventory_id);
+                    }
+                }
                 if(data && data.meta && data.meta==200){
                     let updatedInventoryItem = {
                         CONSUMER_KEY:user.CONSUMER_KEY,
@@ -33,7 +40,7 @@ module.exports.inventorySingle = async (user,inventory_id) => {
                     await Inventory({CONSUMER_KEY:user.CONSUMER_KEY,inventory_id:inventory_id},updatedInventoryItem);
                 }else{
                     logger.error(`Could not update single inventory ${inventory_id} for user ${user.email}: ${err}`);
-                    throw err;
+                    return;
                 }
             });
         }
@@ -44,7 +51,7 @@ module.exports.inventorySingle = async (user,inventory_id) => {
  * @description updates and rewrites the users inventory model
  * @param {User} user - Mongodb User schema
  */
-module.exports.inventoryAll = (user) => {
+module.exports.inventoryAll = async (user) => {
     const oauth = new OAuth.OAuth(
         user.TOKEN_VALUE,
         user.TOKEN_SECRET,
@@ -55,13 +62,20 @@ module.exports.inventoryAll = (user) => {
         "HMAC-SHA1"
     )
     // get inventory data
-    oauth.get("https://api.bricklink.com/api/store/v1/inventories",oauth._requestUrl, oauth._accessUrl, 
+    await oauth.get("https://api.bricklink.com/api/store/v1/inventories",oauth._requestUrl, oauth._accessUrl, 
         async (err, data) => {
+            if(err){
+                logger.error(`receiving order items for user ${user.email} gave error : ${err}`);
+                if(err.code='ETIMEDOUT'){
+                    logger.warn(`Timeout received by bricklink API from user ${user.email}, retrying after 20sec... `);
+                    return setTimeout(this.inventoryAll, TIMEOUT_RESTART,user);
+                }
+            }
             try{
                 data = JSON.parse(data);
                 }catch(e){
                     logger.error(`could not parse data for inventory for user ${user.email}: ${e}`);
-                    throw new Error(e);
+                    return;
                 }
             //check if inventory data is correct
             if(data && data.meta && data.meta.code==200){
@@ -75,10 +89,10 @@ module.exports.inventoryAll = (user) => {
                                 ...item
                             }
                         );
-                        newItem.save((err,data)=>{
+                        await newItem.save((err,data)=>{
                             if(err){
                                 logger.error(`Could not save new inventory item ${item.inventory_id} of user ${user.email}: ${err}`);
-                                throw err;
+                                return;
                             }
                         });
                         }
@@ -92,7 +106,7 @@ module.exports.inventoryAll = (user) => {
     );
 }
 
-module.exports.ordersAll = (user,query="")=>{
+module.exports.ordersAll = async (user,query="")=>{
     const oauth = new OAuth.OAuth(
         user.TOKEN_VALUE,
         user.TOKEN_SECRET,
@@ -102,24 +116,34 @@ module.exports.ordersAll = (user,query="")=>{
         null,
         "HMAC-SHA1"
     );
-    oauth.get("https://api.bricklink.com/api/store/v1/orders"+query,oauth._requestUrl, oauth._accessUrl, 
+    await oauth.get("https://api.bricklink.com/api/store/v1/orders"+query,oauth._requestUrl, oauth._accessUrl, 
         async (err, data) => {
+            if(err){
+                logger.error(`receiving order items for user ${user.email} gave error : ${err}`);
+                if(err.code='ETIMEDOUT'){
+                    logger.warn(`Timeout received by bricklink API from user ${user.email}, retrying after 20sec... `);
+                    return setTimeout(this.ordersAll, TIMEOUT_RESTART,user, query);
+                }
+            }
             try{
             data = JSON.parse(data);
             }catch(e){
                 logger.error(`could not parse data for orders for user ${user.email}: ${e}`);
-                throw new Error(e);
+                return;;
             }
             if(data && data.meta && data.meta.code==200){
                 logger.info(`Found ${data.data.length} orders for user ${user.email}`);
                 data.data.forEach(
                     async (order) => {
                         const order_db = await Order.findOne({consumer_key:user.CONSUMER_KEY,order_id:order.order_id});                                                        
-                        oauth.get("https://api.bricklink.com/api/store/v1/orders/"+order.order_id+"/items",oauth._requestUrl, oauth._accessUrl, 
+                        await oauth.get("https://api.bricklink.com/api/store/v1/orders/"+order.order_id+"/items",oauth._requestUrl, oauth._accessUrl, 
                         async (err, data_items) => {
                             if(err){
                                 logger.error(`receiving order items for user ${user.email} gave error : ${err}`);
-                                throw err;
+                                if(err.code='ETIMEDOUT'){
+                                    logger.warn(`Timeout received by bricklink API from user ${user.email}, retrying after 20sec... `);
+                                    return setTimeout(this.ordersAll, TIMEOUT_RESTART,user, query);
+                                }
                             }
                             try{
                             data_items = JSON.parse(data_items);
@@ -141,10 +165,10 @@ module.exports.ordersAll = (user,query="")=>{
                                         ...order,
                                         items:data_items.data
                                     });
-                                    newOrder.save((err,data)=>{
+                                    await newOrder.save((err,data)=>{
                                         if(err){
                                             logger.error(`Could not save new order ${order.order_id} of user ${user.email} ${err}`);
-                                            throw err;
+                                            return;
                                         }
                                     });
                                 }else{
@@ -171,7 +195,7 @@ module.exports.ordersAll = (user,query="")=>{
                                         Order.updateOne({consumer_key:user.CONSUMER_KEY,order_id:order.order_id},order_dbObj,(err)=>{
                                             if(err){
                                                 logger.error(`Could not update order ${order.order_id} of user ${user.email} : ${err}`);
-                                                throw err;
+                                                return;
                                             }
                                         });
                                     }
