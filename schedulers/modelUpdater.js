@@ -105,8 +105,8 @@ const processKeys = async () =>{
                         }
                     }else{
                         //No email or _id found in session key
-                        // logger.info(`Dangling session found ${key}, removing...`);
-                        // await client.del(key);
+                        logger.info(`Dangling session found ${key}, removing...`);
+                        await client.del(key);
                         danglingSessions++;
                         processedKeys++;
                         if(processedKeys===totalKeys)resolve({doingUsers,danglingSessions});

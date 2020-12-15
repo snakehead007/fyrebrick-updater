@@ -91,7 +91,7 @@ module.exports.inventoryAll = async (user) => {
                         const item_in_db = await Inventory.findOne({CONSUMER_KEY:user.CONSUMER_KEY,inventory_id:item.inventory_id});
                         //console.log(JSON.stringify(item),JSON.stringify(item_in_db));
                         if(!item_in_db){
-                            logger.debug(`did not found item ${item.inventory_id} for user ${user.CONSUMER_KEY} in database, creating new item`);
+                            //logger.debug(`did not found item ${item.inventory_id} for user ${user.CONSUMER_KEY} in database, creating new item`);
                             //new
                             itemsNew++;
                             const newItem = new Inventory(
@@ -109,7 +109,7 @@ module.exports.inventoryAll = async (user) => {
                                 }
                             })
                         }else{
-                            logger.debug(`Found item ${item.inventory_id} in database, item in database is out of date. updating item ...`);
+                            //logger.debug(`Found item ${item.inventory_id} in database, item in database is out of date. updating item ...`);
                             itemsUpdated++;
                             await Inventory.updateOne({
                                 CONSUMER_KEY:user.CONSUMER_KEY,
@@ -233,13 +233,13 @@ module.exports.ordersAll = async (user,query="")=>{
                                         items:data_items.data
                                     };
                                     //check if there is any updates
-                                    if(!order.status==="PURGED"){
-                                        Order.updateOne({consumer_key:user.CONSUMER_KEY,order_id:order.order_id},order_dbObj,(err)=>{
+                                    if(order.status.toUpperCase()!=="PURGED"){
+                                        Order.updateOne({consumer_key:user.CONSUMER_KEY,order_id:order.order_id},order_dbObj,(err,data)=>{
                                             if(err){
                                                 logger.error(`Could not update order ${order.order_id} of user ${user.email} : ${err}`);
                                                 return;
                                             }else{
-                                                logger.info(`Successfully updated order ${order_dbObj.order_id}`);
+                                                logger.info(`Successfully updated order ${order_dbObj.order_id} update data : ${data}`);
                                             }
                                         });
                                     }else{
