@@ -5,14 +5,11 @@ const {isObjectsSame,mappingOrderItemsForChecked} = require('./functions');
 const {logger} = require('./logger');
 const { update } = require('../models/inventory');
 module.exports.inventorySingle = async (user,inventory_id) => {
-    const item = await Inventory.findOne({CONSUMER_KEY:user.CONSUMER_KEY},async(err, data)=>{
+    await Inventory.findOne({CONSUMER_KEY:user.CONSUMER_KEY,inventory_id:inventory_id},async(err, data)=>{
         if(err){
             logger.error(`Could not find inventory for user ${user.email} : ${err}`);
             return false;
         }else{
-            const item = data.map((item)=>{
-                return item.inventory_id;
-            });
             const oauth = new OAuth.OAuth(
                 user.TOKEN_VALUE,
                 user.TOKEN_SECRET,
@@ -29,6 +26,9 @@ module.exports.inventorySingle = async (user,inventory_id) => {
                     if(err.code='ETIMEDOUT'){
                         logger.warn(`Timeout received by bricklink API from user ${user.email}, retrying after 20sec... `);
                         return false;
+                    }else if(err.code="ECONNRESET"){
+                        logger.warn(`Connection reset, please check your internet connection`);
+                        return;
                     }
                 }
                 if(data && data.meta && data.meta==200){
@@ -68,6 +68,9 @@ module.exports.inventoryAll = async (user) => {
                 if(err.code='ETIMEDOUT'){
                     logger.warn(`Timeout received by bricklink API from user ${user.email}, retrying after 20sec... `);
                     return false;
+                }else if(err.code="ECONNRESET"){
+                    logger.warn(`Connection reset, please check your internet connection`);
+                    return;
                 }
             }
             try{
@@ -79,24 +82,52 @@ module.exports.inventoryAll = async (user) => {
             //check if inventory data is correct
             if(data && data.meta && data.meta.code==200){
                 logger.info(`preparing to save ${data.data.length} items to inventory in our database for user ${user.email}`);
-                await Inventory.deleteMany({CONSUMER_KEY:user.CONSUMER_KEY});
+                // await Inventory.deleteMany({CONSUMER_KEY:user.CONSUMER_KEY});
+                const totalItems = data.data.length;
+                let itemsUpdated = 0;
+                let itemsNew = 0;
                 data.data.forEach(
                     async (item) => {
-                        const newItem = new Inventory(
-                            {
+                        const item_in_db = await Inventory.findOne({CONSUMER_KEY:user.CONSUMER_KEY,inventory_id:item.inventory_id});
+                        //console.log(JSON.stringify(item),JSON.stringify(item_in_db));
+                        if(!item_in_db){
+                            logger.debug(`did not found item ${item.inventory_id} for user ${user.CONSUMER_KEY} in database, creating new item`);
+                            //new
+                            itemsNew++;
+                            const newItem = new Inventory(
+                                {
+                                    CONSUMER_KEY:user.CONSUMER_KEY,
+                                    ...item
+                                }
+                            );
+                            await newItem.save((err, data)=>{
+                                if(err){
+                                    logger.error(`Could not save new inventory item ${item.inventory_id} of user ${user.email}: ${err}`);
+                                    return false;
+                                }else{
+                                    logger.info(`Successfully saved new inventory item ${item.inventory_id} for user ${user.email}`);
+                                }
+                            })
+                        }else{
+                            logger.debug(`Found item ${item.inventory_id} in database, item in database is out of date. updating item ...`);
+                            itemsUpdated++;
+                            await Inventory.updateOne({
+                                CONSUMER_KEY:user.CONSUMER_KEY,
+                                inventory_id:item.inventory_id
+                            },{
                                 CONSUMER_KEY:user.CONSUMER_KEY,
                                 ...item
-                            }
-                        );
-                        await newItem.save((err,data)=>{
-                            if(err){
-                                logger.error(`Could not save new inventory item ${item.inventory_id} of user ${user.email}: ${err}`);
-                                return false;
-                            }
-                        });
+                            },(err,data)=>{
+                                if(err){
+                                    logger.error(`Could not save new inventory item ${item.inventory_id} of user ${user.email}: ${err}`);
+                                    return false;
+                                }else{
+                                    //logger.info(`Successfully updated inventory item ${item.inventory_id} for user ${user.email}`);
+                                }
+                            });
                         }
-                    )
-                logger.info(`Successfully saved/updated inventory items for users ${user.email}`);
+                    }
+                );
             }else{
                 logger.warn(`Could not receive any data to update inventory for user ${user.email}: ${data.meta.description}`);
                 logger.debug(`${data.meta.description}`)
@@ -105,7 +136,9 @@ module.exports.inventoryAll = async (user) => {
     );
 }
 
+//updates all orders
 module.exports.ordersAll = async (user,query="")=>{
+    //authentication for this user
     const oauth = new OAuth.OAuth(
         user.TOKEN_VALUE,
         user.TOKEN_SECRET,
@@ -115,13 +148,21 @@ module.exports.ordersAll = async (user,query="")=>{
         null,
         "HMAC-SHA1"
     );
+    //make the bricklink api request to get all the orders
     await oauth.get("https://api.bricklink.com/api/store/v1/orders"+query,oauth._requestUrl, oauth._accessUrl, 
         async (err, data) => {
+            //error handling
             if(err){
                 logger.error(`receiving order items for user ${user.email} gave error : ${err}`);
                 if(err.code='ETIMEDOUT'){
                     logger.warn(`Timeout received by bricklink API from user ${user.email}, retrying after 20sec... `);
                     return false
+                }else if(err.code="ECONNRESET"){
+                    logger.warn(`Connection reset, please check your internet connection`);
+                    return;
+                }else{
+                    logger.warn(`Error ${err.code}: retrying later...`);
+                    return;
                 }
             }
             try{
@@ -134,7 +175,7 @@ module.exports.ordersAll = async (user,query="")=>{
                 logger.info(`Found ${data.data.length} orders for user ${user.email}`);
                 data.data.forEach(
                     async (order) => {
-                        const order_db = await Order.findOne({consumer_key:user.CONSUMER_KEY,order_id:order.order_id});                                                        
+                        const order_db = await Order.findOne({consumer_key:user.CONSUMER_KEY,order_id:order.order_id});
                         await oauth.get("https://api.bricklink.com/api/store/v1/orders/"+order.order_id+"/items",oauth._requestUrl, oauth._accessUrl, 
                         async (err, data_items) => {
                             if(err){
@@ -142,6 +183,9 @@ module.exports.ordersAll = async (user,query="")=>{
                                 if(err.code='ETIMEDOUT'){
                                     logger.warn(`Timeout received by bricklink API from user ${user.email}, retrying after 20sec... `);
                                     return false;
+                                }else if(err.code="ECONNRESET"){
+                                    logger.warn(`Connection reset, please check your internet connection`);
+                                    return;
                                 }
                             }
                             try{
@@ -188,15 +232,18 @@ module.exports.ordersAll = async (user,query="")=>{
                                         ...order,
                                         items:data_items.data
                                     };
-
                                     //check if there is any updates
-                                    if(!isObjectsSame(order_db,order_dbObj)){
+                                    if(!order.status==="PURGED"){
                                         Order.updateOne({consumer_key:user.CONSUMER_KEY,order_id:order.order_id},order_dbObj,(err)=>{
                                             if(err){
                                                 logger.error(`Could not update order ${order.order_id} of user ${user.email} : ${err}`);
                                                 return;
+                                            }else{
+                                                logger.info(`Successfully updated order ${order_dbObj.order_id}`);
                                             }
                                         });
+                                    }else{
+                                        logger.debug(`Order ${order_dbObj.order_id} does not meet the requirements of status, has status ${order.status}`)
                                     }
                                 }
                             }else{
