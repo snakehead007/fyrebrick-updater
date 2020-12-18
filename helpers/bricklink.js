@@ -4,6 +4,8 @@ const Order = require("../models/order");
 const {isObjectsSame,mappingOrderItemsForChecked} = require('./functions');
 const {logger} = require('./logger');
 const { update } = require('../models/inventory');
+const {increaseApiCallAmount,hasUserExceededAPiAmount} = require('../helpers/ApiHelper');
+
 module.exports.inventorySingle = async (user,inventory_id) => {
     await Inventory.findOne({CONSUMER_KEY:user.CONSUMER_KEY,inventory_id:inventory_id},async(err, data)=>{
         if(err){
@@ -19,6 +21,11 @@ module.exports.inventorySingle = async (user,inventory_id) => {
                 null,
                 "HMAC-SHA1"
             );
+            if(await hasUserExceededAPiAmount(user._id)){
+                logger.error(`User has exceeded the API limit of bricklink'`);
+                return;
+            }
+            increaseApiCallAmount(user._id);
             await oauth.get("https://api.bricklink.com/api/store/v1/inventories/"+inventory_id,oauth._requestUrl, oauth._accessUrl, 
             async (err, data) => {
                 if(err){
@@ -61,6 +68,12 @@ module.exports.inventoryAll = async (user) => {
         "HMAC-SHA1"
     )
     // get inventory data
+    
+    if(await hasUserExceededAPiAmount(user._id)){
+        logger.error(`User has exceeded the API limit of bricklink'`);
+        return;
+    }
+    increaseApiCallAmount(user._id);
     await oauth.get("https://api.bricklink.com/api/store/v1/inventories",oauth._requestUrl, oauth._accessUrl, 
         async (err, data) => {
             if(err){
@@ -149,6 +162,11 @@ module.exports.ordersAll = async (user,query="")=>{
         "HMAC-SHA1"
     );
     //make the bricklink api request to get all the orders
+    if(await hasUserExceededAPiAmount(user._id)){
+        logger.error(`User has exceeded the API limit of bricklink'`);
+        return;
+    }
+    increaseApiCallAmount(user._id);
     await oauth.get("https://api.bricklink.com/api/store/v1/orders"+query,oauth._requestUrl, oauth._accessUrl, 
         async (err, data) => {
             //error handling
@@ -176,6 +194,11 @@ module.exports.ordersAll = async (user,query="")=>{
                 data.data.forEach(
                     async (order) => {
                         const order_db = await Order.findOne({consumer_key:user.CONSUMER_KEY,order_id:order.order_id});
+                        if(await hasUserExceededAPiAmount(user._id)){
+                            logger.error(`User has exceeded the API limit of bricklink'`);
+                            return;
+                        }
+                        increaseApiCallAmount(user._id);
                         await oauth.get("https://api.bricklink.com/api/store/v1/orders/"+order.order_id+"/items",oauth._requestUrl, oauth._accessUrl, 
                         async (err, data_items) => {
                             if(err){

@@ -73,8 +73,8 @@ const processKeys = async () =>{
                                 }else{
                                     logger.error(`No user found for _id ${data._id}, might be lost`);
                                 }    
-                                // logger.info(`Did not found user ${data.email}, removing lost session key '${key}'`);
-                                // await client.del(key);
+                                 logger.info(`Did not found user ${data.email}, removing lost session key '${key}'`);
+                                 await client.del(key);
                                 processedKeys++;
                                 if(processedKeys===totalKeys)resolve({doingUsers,danglingSessions});
                             }else{
