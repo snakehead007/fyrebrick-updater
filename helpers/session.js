@@ -1,5 +1,5 @@
 const redis = require('redis');
-const {logger} = require('./logger');
+const {logger} = require("fyrebrick-helper").helpers;
 
 const client = redis.createClient(process.env.REDIS_PORT,process.env.REDIS_HOST);
 

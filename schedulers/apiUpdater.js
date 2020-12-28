@@ -1,6 +1,6 @@
 const schedule = require('node-schedule');
-const User = require('../models/user');
-const {logger} = require('../helpers/logger');
+const {User} = require("fyrebrick-helper").models;
+const {logger} = require("fyrebrick-helper").helpers;
 
 const CallAmountUpdater = ()=>{
     //calls everyday “At 00:00.”

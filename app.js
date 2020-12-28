@@ -1,9 +1,9 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const {start}  = require('./schedulers/schedulers');
-const {logger} = require('./helpers/logger');
-const Inventory = require('./models/inventory');
-const Order = require('./models/order');
+const {logger} = require("fyrebrick-helper").helpers;
+const {Inventory} = require("fyrebrick-helper").models;
+const {Order} = require("fyrebrick-helper").models;
 try {
     mongoose.connect(process.env.DB_URI, {
         useCreateIndex: true,

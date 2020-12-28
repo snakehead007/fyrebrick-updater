@@ -1,7 +1,7 @@
 const schedule = require('node-schedule');
-const User = require('../models/user');
-const bricklink = require('../helpers/bricklink');
-const {logger} = require('../helpers/logger');
+const {User} = require("fyrebrick-helper").models;
+const {bricklink} = require("fyrebrick-helper").helpers;
+const {logger} = require("fyrebrick-helper").helpers;
 const {client} = require('../helpers/session');
 const TIMEOUT_RESTART = 20*100;
 const bricklinkPlus = require('bricklink-plus');
@@ -30,7 +30,7 @@ exports.default = async ()=>{
             return;
         }
         await processKeys().then((data)=>{
-            logger.info(`Updating ${data.doingUsers.length} CONSUMER_KEY's processed`);
+            logger.info(`Updating, ${data.doingUsers.length} CONSUMER_KEY's processed`);
             data.doingUsers.forEach(async(user,index)=>{
                 logger.info(`Running ${index+1}/${data.doingUsers.length}...`);
                 await updateModels(user);
@@ -58,7 +58,7 @@ const processKeys = async () =>{
                 await client.get(key,async (err,data) =>{
                     data = JSON.parse(data);
                     if(data && data.email && data._id){
-                        logger.info(`Found user ${data.email} connected to session ${index}`);
+                        //logger.debug(`Found user ${data.email} connected to session ${index}`);
                         const CURRENT_TIME_IN_MINUTES = Math.round((Date.now()/1000)/60);
                         const user = await User.findOne({_id:data._id},async (err,user)=>{
                             if(err){
@@ -78,7 +78,7 @@ const processKeys = async () =>{
                                 processedKeys++;
                                 if(processedKeys===totalKeys)resolve({doingUsers,danglingSessions});
                             }else{
-                                logger.info(`User ${user.email} found with session ${index}`);
+                                //logger.debug(`User ${user.email} found with session ${index}`);
                             }
                         });
                         if(CURRENT_TIME_IN_MINUTES%user.update_interval===0){
@@ -120,11 +120,9 @@ const updateModels = async (user) => {
     const s1 = await bricklink.inventoryAll(user);
     if(s1===false){
         logger.warn(`requesting inventoryAll for user ${user.email} was not successful`);
-        //timeout(await bricklink.inventoryAll,TIMEOUT_RESTART,user);
     }
-    const s2 = await bricklink.ordersAll(user);
+    const s2 = await bricklink.ordersAll(user,"?direction=in&status=pending,updated,processing,ready,paid,packed");
     if(s2===false){
         logger.warn(`requesting ordersAll for user ${user.email} was not successful`);
-        //timeout(bricklink.ordersAll(user,"?direction=in&status=pending,updated,processing,ready,paid,packed"),TIMEOUT_RESTART,user);
     }
 }

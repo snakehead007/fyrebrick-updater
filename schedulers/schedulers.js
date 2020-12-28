@@ -1,6 +1,6 @@
 const cacheUpdater = require('./modelUpdater');
 const apiUpdater = require('./apiUpdater');
-const {logger} = require('../helpers//logger');
+const {logger} = require("fyrebrick-helper").helpers;
 
 module.exports = 
 {
