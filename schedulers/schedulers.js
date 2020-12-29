@@ -1,5 +1,6 @@
 const cacheUpdater = require('./modelUpdater');
 const apiUpdater = require('./apiUpdater');
+const storesUpdater = require('./storesUpdater');
 const {logger} = require("fyrebrick-helper").helpers;
 
 module.exports = 
@@ -8,6 +9,7 @@ module.exports =
         try{
             cacheUpdater.default();
             apiUpdater.CallAmountUpdater();
+            storesUpdater();
         }catch(err){
             logger.error(`Caught error successfully ${err}`);
         }
