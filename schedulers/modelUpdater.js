@@ -3,7 +3,6 @@ const {User} = require("fyrebrick-helper").models;
 const {bricklink} = require("fyrebrick-helper").helpers;
 const {logger} = require("fyrebrick-helper").helpers;
 const {client} = require('../helpers/session');
-const TIMEOUT_RESTART = 20*100;
 const bricklinkPlus = require('bricklink-plus');
 exports.default = async ()=>{
     schedule.scheduleJob("0 0 * * *",async ()=>{
@@ -54,12 +53,11 @@ const processKeys = async () =>{
                 reject(error);
             }
             await keys.forEach(async(key, index)=>{
-                //logger.info(`Searching session nr ${index} with key ${key}`);
                 await client.get(key,async (err,data) =>{
                     data = JSON.parse(data);
                     if(data && data.email && data._id){
-                        //logger.debug(`Found user ${data.email} connected to session ${index}`);
-                        const CURRENT_TIME_IN_MINUTES = Math.round((Date.now()/1000)/60);
+                        //current time in minutes per 120 minutes.
+                        const CURRENT_TIME_IN_MINUTES = Math.round((Date.now()/1000)/60)%120;
                         const user = await User.findOne({_id:data._id},async (err,user)=>{
                             if(err){
                                 logger.error(`Error while finding user, err: ${err.message}`);
@@ -77,8 +75,6 @@ const processKeys = async () =>{
                                  await client.del(key);
                                 processedKeys++;
                                 if(processedKeys===totalKeys)resolve({doingUsers,danglingSessions});
-                            }else{
-                                //logger.debug(`User ${user.email} found with session ${index}`);
                             }
                         });
                         if(CURRENT_TIME_IN_MINUTES%user.update_interval===0){
@@ -117,12 +113,6 @@ const processKeys = async () =>{
     })
 }
 const updateModels = async (user) => {
-    const s1 = await bricklink.inventoryAll(user);
-    if(s1===false){
-        logger.warn(`requesting inventoryAll for user ${user.email} was not successful`);
-    }
-    const s2 = await bricklink.ordersAll(user,"?direction=in&status=pending,updated,processing,ready,paid,packed");
-    if(s2===false){
-        logger.warn(`requesting ordersAll for user ${user.email} was not successful`);
-    }
+    await bricklink.inventory.all(user);
+    await bricklink.order.all(user);
 }
