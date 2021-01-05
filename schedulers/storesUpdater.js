@@ -4,14 +4,48 @@ const {logger} = require("fyrebrick-helper").helpers
 const {Store} = require("fyrebrick-helper").models;
 const {User} = require("fyrebrick-helper").models;
 const _ = require('lodash');
-const allCountryIDs = ["AR","BR","CA","CL","CO","CR","SV","MX","PE","US","VE","AT","BY","BE","BG","HR","CZ","DK","EE","FO","FI","FR","DE","GI","GR","HU","IS","IE","IT","LV","LT","LU","MT","MD","MC","NL","NO","PL","PT","RO","RU","SM","RS","SK","SI","ES","SE","CH","UA","UK","UA","CN","HK","IN","ID","JP","KZ","MO","MY","NZ","PK","PH","SG","KR","TW","TH","VN","BH","CY","IL","LB","MA","OM","QA","ZA","IR","AE"];
+const allCountryIDs = ["AR","BR","CA","CL","CO","CR","SV","MX","PE","US","VE","AT","BY","BE","BG","HR","CZ","DK","EE","FO","FI","FR","DE","GI","GR","HU","IS","IE","IT","LV","LT","LU","MT","MD","MC","NL","NO","PL","PT","RO","RU","SM","RS","SK","SI","ES","SE","CH","UA","UK","CN","HK","IN","ID","JP","KZ","MO","MY","NZ","PK","PH","SG","KR","TW","TH","VN","BH","CY","IL","LB","MA","OM","QA","ZA","IR","AE"];
 //const allCountryIDs = ["VE","AR","CL","CO"]; //tester variable
 
 module.exports = async ()=>{
     //every 24 hours
     //schedule.scheduleJob("0 0 * * *",async()=>{
         logger.info('running store updater');
-        await runStores();
+        try{
+            console.time('run stores');
+            logger.info('started running stores');
+            logger.info(`searching for ${allCountryIDs.length} countries`);
+            await allCountryIDs.forEach(async(countryID)=>{
+                try{
+                    const data = await getStores(countryID);
+                    logger.info(`countryID: ${countryID} ${data.length} stores`);
+                    await data.forEach(async(store,index)=>{  
+                        const store_db = await Store.findOne({username:store.username});
+                        logger.info(`store ${store.name} from country ${countryID} done`);
+                        if(!store_db){
+                            const newStore = new Store(store);
+                            await newStore.save(err=>{
+                                if(err){
+                                    logger.err(err);
+                                }
+                            })  
+                        }else{
+                            await Store.updateOne({_id:store_db._id},store);
+                        }
+                        if(countryID===allCountryIDs[allCountryIDs.length-1] && index+1 === data.length){
+                            logger.info(`all stores ran!`);
+                            console.timeEnd('run stores');
+                            await updateAll();
+                        }
+                    })
+                    
+                }catch(err){
+                    logger.error(err.toString());
+                }
+            });
+        }catch(err){
+            logger.error(err);
+        }
         //await updateAll();
     //});
 }
@@ -78,39 +112,6 @@ const updateAll = async()=>{
         }
     });
 }
-const runStores = async ()=>{
-    console.time('run stores');
-    logger.info('started running stores');
-    logger.info(`searching for ${allCountryIDs.length} countries`);
-    await allCountryIDs.forEach(async(countryID)=>{
-        try{
-            const data = await getStores(countryID);
-            logger.info(`countryID: ${countryID} ${data.length} stores`);
-            await data.forEach(async(store,index)=>{  
-                const store_db = await Store.findOne({username:store.username});
-                logger.info(`store ${store.name} from country ${countryID} done`);
-                if(!store_db){
-                    const newStore = new Store(store);
-                    await newStore.save(err=>{
-                        if(err){
-                            logger.err(err);
-                        }
-                    })  
-                }else{
-                    await Store.updateOne({_id:store_db._id},store);
-                }
-                if(countryID===allCountryIDs[allCountryIDs.length-1] && index+1 === data.length){
-                    logger.info(`all stores ran!`);
-                    console.timeEnd('run stores');
-                    await updateAll();
-                }
-            })
-            
-        }catch(err){
-            logger.error(err);
-        }
-    });
-};
 //this creates an array of online the usernames
 const arrayMe = (data)=>{
     let d = [];
