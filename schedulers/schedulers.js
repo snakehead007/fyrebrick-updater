@@ -9,7 +9,7 @@ module.exports =
         try{
             cacheUpdater.default();
             apiUpdater.CallAmountUpdater();
-            //storesUpdater();
+            storesUpdater();
         }catch(err){
             logger.error(`Caught error successfully ${err}`);
         }
