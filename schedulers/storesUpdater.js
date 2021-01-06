@@ -9,7 +9,7 @@ const allCountryIDs = ["BE"];
 
 module.exports = async ()=>{
     //every 24 hours
-    //schedule.scheduleJob("0 0 * * *",async()=>{
+    schedule.scheduleJob("0 0 * * *",async()=>{
         logger.info('running store updater');
         try{
             console.time('run stores');
@@ -47,7 +47,7 @@ module.exports = async ()=>{
             logger.error(err);
         }
         //await updateAll();
-    //});
+    });
 }
 const updateAll = async()=>{
     //after every country done, update ranks
