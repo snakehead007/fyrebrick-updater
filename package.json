@@ -1,38 +1,29 @@
 {
-  "name": "fyrebrick-updater",
-  "version": "1.0.0",
-  "description": "",
-  "main": "app.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node --max-old-space-size=8192 ./app.js",
-    "docker": "docker build -t snakehead007/fyrebrick-updater:latest . && docker push snakehead007/fyrebrick-updater:latest"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/snakehead007/fyrebrick-updater.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/snakehead007/fyrebrick-updater/issues"
-  },
-  "homepage": "https://github.com/snakehead007/fyrebrick-updater#readme",
-  "dependencies": {
-    "bricklink-plus": "^1.0.10",
-    "cheerio": "^1.0.0-rc.3",
-    "cli-progress": "^3.8.2",
-    "client": "^0.0.1",
-    "dotenv": "^8.2.0",
-    "express-useragent": "^1.0.15",
-    "fyrebrick-helper": "^1.0.62",
-    "lodash": "^4.17.20",
-    "mongoose": "^5.11.5",
-    "node-schedule": "^2.0.0",
-    "oauth": "^0.9.15",
-    "redis": "^3.0.2",
-    "superagent": "^6.1.0",
-    "superagent-throttle": "^1.0.1",
-    "winston": "^3.3.0"
-  }
+    "name": "fyrebrick-updater",
+    "version": "1.0.0",
+    "description": "",
+    "main": "app.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node --max-old-space-size=8192 ./app.js",
+        "docker": "sudo docker build -t snakehead007/fyrebrick-updater:latest . && sudo docker push snakehead007/fyrebrick-updater:latest"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/snakehead007/fyrebrick-updater.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/snakehead007/fyrebrick-updater/issues"
+    },
+    "homepage": "https://github.com/snakehead007/fyrebrick-updater#readme",
+    "dependencies": {
+        "bricklink-plus": "^1.0.10",
+        "dotenv": "^8.2.0",
+        "fyrebrick-helper": "^1.1.2",
+        "mongoose": "^5.11.15",
+        "node-schedule": "^2.0.0",
+        "redis": "^3.0.2"
+    }
 }
