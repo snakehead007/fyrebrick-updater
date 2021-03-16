@@ -6,7 +6,8 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "node --max-old-space-size=8192 ./app.js",
-        "docker": "sudo docker build -t snakehead007/fyrebrick-updater:latest . && sudo docker push snakehead007/fyrebrick-updater:latest"
+        "docker": "sudo docker build -t registry.hub.docker.com/snakehead007/fyrebrick-updater . && sudo docker push registry.hub.docker.com/snakehead007/fyrebrick-updater",
+        "github": "sudo docker build -t ghcr.io/fyrebrick/fyrebrick-updater . && sudo docker push ghcr.io/fyrebrick/fyrebrick-updater"
     },
     "repository": {
         "type": "git",
