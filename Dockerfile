@@ -1,7 +1,7 @@
-FROM node:15.11.0
-WORKDIR /usr/src/app
-COPY package*.json /usr/src/app/
-RUN npm install -g npm@7.5.4
-RUN npm install --save
-COPY . /usr/src/app
-CMD [ "npm", "start" ]
+FROM node:15.11.0-alpine3.13
+WORKDIR /app
+COPY package.json /app/package.json
+RUN apk add yarn
+RUN yarn install 
+COPY . /app
+CMD ["yarn", "start"]
