@@ -1,4 +1,4 @@
-require('dotenv').config();
+//require('dotenv').config();
 const mongoose = require('mongoose');
 const {start}  = require('./schedulers/schedulers');
 const {logger} = require("fyrebrick-helper").helpers;
