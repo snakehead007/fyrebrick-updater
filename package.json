@@ -5,8 +5,7 @@
     "main": "app.js",
     "scripts": {
         "start": "node --max-old-space-size=8192 ./app.js",
-        "private": "sudo docker build --network=host -t ghcr.io/fyrebrick/p-fyrebrick-updater . && sudo docker push ghcr.io/fyrebrick/p-fyrebrick-updater",
-        "public": "sudo docker build --network=host -t ghcr.io/fyrebrick/fyrebrick-updater . && sudo docker push ghcr.io/fyrebrick/fyrebrick-updater"
+        "docker": "sudo docker build --network=host -t ghcr.io/fyrebrick/fyrebrick-updater . && sudo docker push ghcr.io/fyrebrick/fyrebrick-updater"
     },
     "repository": {
         "type": "git",
