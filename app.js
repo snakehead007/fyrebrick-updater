@@ -1,3 +1,4 @@
+//Uncomment next line if in development
 //require('dotenv').config();
 const mongoose = require('mongoose');
 const {start}  = require('./schedulers/schedulers');

@@ -20,7 +20,7 @@
     "dependencies": {
         "bricklink-plus": "^1.0.10",
         "dotenv": "^8.2.0",
-        "fyrebrick-helper": "^1.1.2",
+        "fyrebrick-helper": "1.1.5",
         "mongoose": "^5.11.15",
         "node-schedule": "^2.0.0",
         "redis": "^3.0.2"
