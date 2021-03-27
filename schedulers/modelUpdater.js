@@ -1,6 +1,6 @@
 const schedule = require('node-schedule');
 const {User} = require("fyrebrick-helper").models;
-const {bricklink} = require("../../fyrebrick-helper").helpers;
+const {bricklink} = require("fyrebrick-helper").helpers;
 const {logger} = require("fyrebrick-helper").helpers;
 const {client} = require('../helpers/session');
 const bricklinkPlus = require('bricklink-plus');
