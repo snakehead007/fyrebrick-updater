@@ -4,12 +4,12 @@ const {logger} = require("fyrebrick-helper").helpers
 const {Store} = require("fyrebrick-helper").models;
 const {User} = require("fyrebrick-helper").models;
 const _ = require('lodash');
-//const allCountryIDs = ["AR","BR","CA","CL","CO","CR","SV","MX","PE","US","VE","AT","BY","BE","BG","HR","CZ","DK","EE","FO","FI","FR","DE","GI","GR","HU","IS","IE","IT","LV","LT","LU","MT","MD","MC","NL","NO","PL","PT","RO","RU","SM","RS","SK","SI","ES","SE","CH","UA","UK","CN","HK","IN","ID","JP","KZ","MO","MY","NZ","PK","PH","SG","KR","TW","TH","VN","BH","CY","IL","LB","MA","OM","QA","ZA","IR","AE"];
-const allCountryIDs = ["BE"];
-
+// const allCountryIDs = ["AR","BR","CA","CL","CO","CR","SV","MX","PE","US","VE","AT","BY","BE","BG","HR","CZ","DK","EE","FO","FI","FR","DE","GI","GR","HU","IS","IE","IT","LV","LT","LU","MT","MD","MC","NL","NO","PL","PT","RO","RU","SM","RS","SK","SI","ES","SE","CH","UA","UK","CN","HK","IN","ID","JP","KZ","MO","MY","NZ","PK","PH","SG","KR","TW","TH","VN","BH","CY","IL","LB","MA","OM","QA","ZA","IR","AE"];
+const allCountryIDs = ["AT","BY","BE","BG","HR","CZ","DK","EE","FI","FR","DE","GI","GR","HU","IS","IE","IT","LV","LT","LU","MT","MD","MC","NL","NO","PL","PT","RO","RU","SM","RS","SK","SI","ES","SE","CH","UA","UK"];
+// const allCountryIDs = ["BE"];
 module.exports = async ()=>{
     //every 24 hours
-    schedule.scheduleJob("0 0 * * *",async()=>{
+    // schedule.scheduleJob("0 0 * * *",async()=>{
         logger.info('running store updater');
         try{
             console.time('run stores');
@@ -47,7 +47,7 @@ module.exports = async ()=>{
             logger.error(err);
         }
         //await updateAll();
-    });
+    // });
 }
 const updateAll = async()=>{
     //after every country done, update ranks
