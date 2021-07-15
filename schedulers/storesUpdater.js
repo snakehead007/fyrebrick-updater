@@ -9,19 +9,19 @@ const allCountryIDs = ["AT","BY","BE","BG","HR","CZ","DK","EE","FI","FR","DE","G
 // const allCountryIDs = ["BE"];
 module.exports = async ()=>{
     //every 24 hours
-    // schedule.scheduleJob("0 0 * * *",async()=>{
-        logger.info('running store updater');
+    schedule.scheduleJob("0 0 * * *",async()=>{
+        // logger.info('running store updater');
         try{
-            console.time('run stores');
-            logger.info('started running stores');
-            logger.info(`searching for ${allCountryIDs.length} countries`);
+            // console.time('run stores');
+            // logger.info('started running stores');
+            // logger.info(`searching for ${allCountryIDs.length} countries`);
             await allCountryIDs.forEach(async(countryID)=>{
                 try{
                     const data = await getStores(countryID);
-                    logger.info(`countryID: ${countryID} ${data.length} stores`);
+                    // logger.info(`countryID: ${countryID} ${data.length} stores`);
                     await data.forEach(async(store,index)=>{  
                         const store_db = await Store.findOne({username:store.username});
-                        logger.info(`store ${store.name} from country ${countryID} done`);
+                        // logger.info(`store ${store.name} from country ${countryID} done`);
                         if(!store_db){
                             const newStore = new Store(store);
                             await newStore.save(err=>{
@@ -33,8 +33,8 @@ module.exports = async ()=>{
                             await Store.updateOne({_id:store_db._id},store);
                         }
                         if(countryID===allCountryIDs[allCountryIDs.length-1] && index+1 === data.length){
-                            logger.info(`all stores ran!`);
-                            console.timeEnd('run stores');
+                            // logger.info(`all stores ran!`);
+                            // console.timeEnd('run stores');
                             await updateAll();
                         }
                     })
@@ -46,8 +46,8 @@ module.exports = async ()=>{
         }catch(err){
             logger.error(err);
         }
-        //await updateAll();
-    // });
+        await updateAll();
+    });
 }
 const updateAll = async()=>{
     //after every country done, update ranks
@@ -77,7 +77,7 @@ const updateAll = async()=>{
             }
         });
     });
-    logger.info(`starting to find ranks... ${allStores.length} stores`);
+    // logger.info(`starting to find ranks... ${allStores.length} stores`);
     users.forEach(async(user)=>{
         user = JSON.parse(JSON.stringify(user)); //why? i dont know, but this fixes it. otherwise properties are undefined
         //logger.info(`running user ${user.userName}`);
@@ -110,7 +110,7 @@ const updateAll = async()=>{
         }
         if(index+1 === store.length){
             //await runStores();
-            logger.info(`Store scheduler done!`);
+            // logger.info(`Store scheduler done!`);
         }
     });
 }

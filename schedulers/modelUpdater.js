@@ -6,10 +6,10 @@ const {client} = require('../helpers/session');
 const bricklinkPlus = require('bricklink-plus');
 exports.default = async ()=>{
     schedule.scheduleJob("0 0 * * *",async ()=>{
-        logger.info(`started daily update for all users`);
+        // logger.info(`started daily update for all users`);
         const user = await User.find({setUpComplete:true});
         user.forEach(async(user)=>{
-            logger.info(`updating for user ${user.email}`);
+            // logger.info(`updating for user ${user.email}`);
             try{
             await updateModels(user);
             }catch(err){
@@ -18,7 +18,7 @@ exports.default = async ()=>{
         })
     })
     schedule.scheduleJob("*/1 * * * *",async ()=>{
-        logger.info(`running model updater job`);
+        // logger.info(`running model updater job`);
         try{
             if(await bricklinkPlus.plus.maintanceCheck.monthly()){
                 logger.warn(`Bricklink is currently working on a monthly maintenance`);
@@ -29,12 +29,12 @@ exports.default = async ()=>{
             return;
         }
         await processKeys().then((data)=>{
-            logger.info(`Updating, ${data.doingUsers.length} CONSUMER_KEY's processed`);
+            // logger.info(`Updating, ${data.doingUsers.length} CONSUMER_KEY's processed`);
             data.doingUsers.forEach(async(user,index)=>{
-                logger.info(`Running ${index+1}/${data.doingUsers.length}...`);
+                // logger.info(`Running ${index+1}/${data.doingUsers.length}...`);
                 await updateModels(user);
             });
-            logger.info(`Removed ${data.danglingSessions} dangling sessions`);
+            // logger.info(`Removed ${data.danglingSessions} dangling sessions`);
         })
     });
 };
@@ -47,7 +47,7 @@ const processKeys = async () =>{
         let totalKeys = 0;
         client.keys("session*", async (error, keys)=>{
             totalKeys = keys.length;
-            logger.info(`Fyrebrick currently has ${keys.length} sessions`);
+            // logger.info(`Fyrebrick currently has ${keys.length} sessions`);
             if(error){
                 logger.error(`Error while finding keys of session: ${error}`);
                 reject(error);
@@ -78,11 +78,11 @@ const processKeys = async () =>{
                             }
                         });
                         if(CURRENT_TIME_IN_MINUTES%user.update_interval===0){
-                            logger.info(`Updating interval for ${user.email} checks out`);
+                            // logger.info(`Updating interval for ${user.email} checks out`);
                             if(alreadyDoneUsers.indexOf(user.CONSUMER_KEY)===-1){
                                 alreadyDoneUsers.push(user.CONSUMER_KEY);
                                     try{
-                                        logger.info(`Processing CONSUMER_KEY ${user.CONSUMER_KEY}`);
+                                        // logger.info(`Processing CONSUMER_KEY ${user.CONSUMER_KEY}`);
                                         doingUsers.push(user);
                                         processedKeys++;
                                         if(processedKeys===totalKeys)resolve({doingUsers,danglingSessions});
@@ -90,18 +90,18 @@ const processKeys = async () =>{
                                         logger.error(`Caught error for user ${user.email} : ${err}`);
                                     }
                             }else{
-                                logger.info(`already processed user ${data.email}`);
+                                // logger.info(`already processed user ${data.email}`);
                                 processedKeys++;
                                 if(processedKeys===totalKeys)resolve({doingUsers,danglingSessions});
                             }
                         }else{
-                            logger.info(`Not updating user ${user.email}, updating interval is ${user.update_interval}`);
+                            // logger.info(`Not updating user ${user.email}, updating interval is ${user.update_interval}`);
                             processedKeys++;
                             if(processedKeys===totalKeys)resolve({doingUsers,danglingSessions});
                         }
                     }else{
                         //No email or _id found in session key
-                        logger.info(`Dangling session found ${key}, removing...`);
+                        // logger.info(`Dangling session found ${key}, removing...`);
                         await client.del(key);
                         danglingSessions++;
                         processedKeys++;
