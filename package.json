@@ -19,7 +19,7 @@
     "homepage": "https://github.com/snakehead007/fyrebrick-updater#readme",
     "dependencies": {
         "bricklink-plus": "^1.0.10",
-        "dotenv": "^8.2.0",
+        "dotenv": "^16.0.0",
         "fyrebrick-helper": "1.1.6",
         "mongoose": "^5.11.15",
         "node-schedule": "^2.0.0",
