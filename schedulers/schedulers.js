@@ -10,8 +10,8 @@ module.exports =
         try{
             cacheUpdater.default();
             apiUpdater.CallAmountUpdater();
-            storesUpdater();
-            store_chart();
+            // storesUpdater();
+            // store_chart();
         }catch(err){
             logger.error(`Caught error successfully ${err}`);
         }

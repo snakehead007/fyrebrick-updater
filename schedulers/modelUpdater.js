@@ -13,7 +13,7 @@ exports.default = async ()=>{
             try{
             await updateModels(user);
             }catch(err){
-                logger.error(`Gave error for user ${err}`);
+                logger.error(`Gave error for user ${JSON.stringify(err)}`);
             }
         })
     })
@@ -25,7 +25,7 @@ exports.default = async ()=>{
                 return;
             }
         }catch(err){
-            logger.error(`err caught checking bricklink maintenance : ${err}`);
+            logger.error(`err caught checking bricklink maintenance : ${JSON.stringify(err)}`);
             return;
         }
         await processKeys().then((data)=>{
@@ -87,7 +87,7 @@ const processKeys = async () =>{
                                         processedKeys++;
                                         if(processedKeys===totalKeys)resolve({doingUsers,danglingSessions});
                                     }catch(err){
-                                        logger.error(`Caught error for user ${user.email} : ${err}`);
+                                        logger.error(`Caught error for user ${user.email} : ${JSON.stringify(err)}`);
                                     }
                             }else{
                                 // logger.info(`already processed user ${data.email}`);
