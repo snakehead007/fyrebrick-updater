@@ -9,7 +9,7 @@ exports.default = async ()=>{
         // logger.info(`started daily update for all users`);
         const user = await User.find({setUpComplete:true});
         user.forEach(async(user)=>{
-            // logger.info(`updating for user ${user.email}`);
+            logger.info(`updating for user ${user.email}`);
             try{
             await updateModels(user);
             }catch(err){
@@ -29,12 +29,12 @@ exports.default = async ()=>{
             return;
         }
         await processKeys().then((data)=>{
-            // logger.info(`Updating, ${data.doingUsers.length} CONSUMER_KEY's processed`);
+            logger.info(`Updating, ${data.doingUsers.length} CONSUMER_KEY's processed`);
             data.doingUsers.forEach(async(user,index)=>{
-                // logger.info(`Running ${index+1}/${data.doingUsers.length}...`);
+                logger.info(`Running ${index+1}/${data.doingUsers.length}...`);
                 await updateModels(user);
             });
-            // logger.info(`Removed ${data.danglingSessions} dangling sessions`);
+            logger.info(`Removed ${data.danglingSessions} dangling sessions`);
         })
     });
 };
