@@ -2,7 +2,6 @@
 
 Updates inventory for the user using bricklink api on a schedule.
 
-
 ## Enviroment variables
 
 MongoDB connection string
